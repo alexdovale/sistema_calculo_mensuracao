@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Metragem de Acervo Documental</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .btn {
+            display: inline-block;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s, transform 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl mx-auto">
+        <div class="card">
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Calculadora de Acervo Documental</h1>
+            <p class="text-center text-gray-500 mb-8">Adicione as medições para calcular a metragem linear total do seu acervo.</p>
+
+            <!-- Seção de Adição de Medidas -->
+            <div id="add-section">
+                <div class="grid md:grid-cols-3 gap-6 mb-6">
+                    <!-- Card Estante -->
+                    <div class="border p-4 rounded-lg bg-gray-50">
+                        <h3 class="font-semibold text-lg mb-3 text-gray-700">1. Estante Completa</h3>
+                        <div class="space-y-3">
+                            <input type="number" id="num-prateleiras" class="input-field" placeholder="Nº de prateleiras na estante">
+                            <div id="caixas-por-prateleira-container"></div>
+                            <button onclick="addEstante()" class="btn btn-primary w-full">Adicionar Estante</button>
+                        </div>
+                    </div>
+                    <!-- Card Prateleira -->
+                    <div class="border p-4 rounded-lg bg-gray-50">
+                        <h3 class="font-semibold text-lg mb-3 text-gray-700">2. Prateleira Avulsa</h3>
+                        <div class="space-y-3">
+                            <input type="number" id="num-caixas-prateleira-avulsa" class="input-field" placeholder="Nº de caixas na prateleira">
+                            <button onclick="addPrateleiraAvulsa()" class="btn btn-primary w-full">Adicionar Prateleira</button>
+                        </div>
+                    </div>
+                    <!-- Card Pilhas -->
+                    <div class="border p-4 rounded-lg bg-gray-50">
+                        <h3 class="font-semibold text-lg mb-3 text-gray-700">3. Pilhas de Documentos</h3>
+                        <div class="space-y-3">
+                            <input type="number" id="altura-pilha" class="input-field" placeholder="Altura da pilha (cm)">
+                            <button onclick="addPilha()" class="btn btn-primary w-full">Adicionar Pilha</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Resumo -->
+            <div id="summary-section" class="mt-8 bg-indigo-50 p-6 rounded-lg">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Resumo do Cálculo</h2>
+                 <div class="grid md:grid-cols-2 gap-6 text-center">
+                     <div>
+                         <p class="text-gray-600 text-sm">Total de Caixas</p>
+                         <p id="total-caixas" class="text-3xl font-bold text-indigo-600">0</p>
+                         <p id="metros-caixas" class="text-gray-500">0.00 metros lineares</p>
+                     </div>
+                      <div>
+                         <p class="text-gray-600 text-sm">Total de Pilhas</p>
+                         <p id="total-pilhas" class="text-3xl font-bold text-indigo-600">0</p>
+                         <p id="metros-pilhas" class="text-gray-500">0.00 metros lineares</p>
+                     </div>
+                 </div>
+                 <div class="mt-6 border-t pt-4 text-center">
+                     <p class="text-gray-600">Medida Total do Acervo</p>
+                     <p id="total-geral" class="text-4xl font-extrabold text-gray-800">0.00 m</p>
+                 </div>
+            </div>
+
+            <!-- Seção de Instrução Final -->
+            <div id="instruction-section" class="mt-6 text-center bg-green-100 text-green-800 p-4 rounded-lg hidden">
+                <p class="font-semibold">*** INSTRUÇÃO ***</p>
+                <p id="instruction-text">Lembre-se de adicionar o valor em metros lineares (0.00 m) no campo 'Mensuração Total' da sua Listagem de Eliminação de Documentos.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const LARGURA_CAIXA_ARQUIVO_CM = 13.5;
+        let totalMetrosCaixas = 0;
+        let totalMetrosPilhas = 0;
+        let totalCaixas = 0;
+        let totalPilhas = 0;
+
+        const numPrateleirasInput = document.getElementById('num-prateleiras');
+        const caixasContainer = document.getElementById('caixas-por-prateleira-container');
+
+        // Gera campos de input para cada prateleira dinamicamente
+        numPrateleirasInput.addEventListener('input', () => {
+            const count = parseInt(numPrateleirasInput.value) || 0;
+            caixasContainer.innerHTML = '';
+            if (count > 0 && count <= 20) { // Limite para não sobrecarregar a UI
+                for (let i = 1; i <= count; i++) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.placeholder = `Caixas na prateleira ${i}`;
+                    input.className = 'input-field mt-2';
+                    input.id = `caixas-prateleira-${i}`;
+                    caixasContainer.appendChild(input);
+                }
+            }
+        });
+
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = text;
+            messageDiv.className = `fixed top-5 right-5 p-4 rounded-lg shadow-lg text-white ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            document.body.appendChild(messageDiv);
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+
+        function addEstante() {
+            const numPrateleiras = parseInt(numPrateleirasInput.value);
+            if (!numPrateleiras || numPrateleiras <= 0) {
+                showMessage('Por favor, informe um número de prateleiras válido.', 'error');
+                return;
+            }
+
+            let caixasNestaEstante = 0;
+            let erro = false;
+            for (let i = 1; i <= numPrateleiras; i++) {
+                const caixasInput = document.getElementById(`caixas-prateleira-${i}`);
+                const caixas = parseInt(caixasInput.value);
+                if (isNaN(caixas) || caixas < 0) {
+                    showMessage(`Número de caixas inválido para a prateleira ${i}.`, 'error');
+                    erro = true;
+                    break;
+                }
+                caixasNestaEstante += caixas;
+            }
+
+            if (!erro) {
+                const medidaMetros = (caixasNestaEstante * LARGURA_CAIXA_ARQUIVO_CM) / 100;
+                totalMetrosCaixas += medidaMetros;
+                totalCaixas += caixasNestaEstante;
+                showMessage(`Adicionado: ${medidaMetros.toFixed(2)} m e ${caixasNestaEstante} caixas.`);
+                updateSummary();
+                // Limpa os campos
+                numPrateleirasInput.value = '';
+                caixasContainer.innerHTML = '';
+            }
+        }
+
+        function addPrateleiraAvulsa() {
+            const input = document.getElementById('num-caixas-prateleira-avulsa');
+            const caixas = parseInt(input.value);
+
+            if (isNaN(caixas) || caixas < 0) {
+                showMessage('Por favor, informe um número de caixas válido.', 'error');
+                return;
+            }
+
+            const medidaMetros = (caixas * LARGURA_CAIXA_ARQUIVO_CM) / 100;
+            totalMetrosCaixas += medidaMetros;
+            totalCaixas += caixas;
+            showMessage(`Adicionado: ${medidaMetros.toFixed(2)} m e ${caixas} caixas.`);
+            updateSummary();
+            input.value = '';
+        }
+
+        function addPilha() {
+            const input = document.getElementById('altura-pilha');
+            const alturaCm = parseFloat(input.value);
+
+            if (isNaN(alturaCm) || alturaCm <= 0) {
+                showMessage('Por favor, informe uma altura válida em cm.', 'error');
+                return;
+            }
+
+            const medidaMetros = alturaCm / 100;
+            totalMetrosPilhas += medidaMetros;
+            totalPilhas++;
+            showMessage(`Adicionado: ${medidaMetros.toFixed(2)} m (1 pilha).`);
+            updateSummary();
+            input.value = '';
+        }
+
+        function updateSummary() {
+            document.getElementById('total-caixas').textContent = totalCaixas;
+            document.getElementById('metros-caixas').textContent = `${totalMetrosCaixas.toFixed(2)} metros lineares`;
+
+            document.getElementById('total-pilhas').textContent = totalPilhas;
+            document.getElementById('metros-pilhas').textContent = `${totalMetrosPilhas.toFixed(2)} metros lineares`;
+
+            const totalGeral = totalMetrosCaixas + totalMetrosPilhas;
+            document.getElementById('total-geral').textContent = `${totalGeral.toFixed(2)} m`;
+
+            if (totalGeral > 0) {
+                document.getElementById('instruction-section').classList.remove('hidden');
+                document.getElementById('instruction-text').textContent = `Lembre-se de adicionar o valor em metros lineares (${totalGeral.toFixed(2)} m) no campo 'Mensuração Total' da sua Listagem de Eliminação de Documentos.`;
+            } else {
+                document.getElementById('instruction-section').classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
