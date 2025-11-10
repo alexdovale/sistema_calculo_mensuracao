@@ -611,6 +611,7 @@
                     </div>
 
                     <div class="buttons-right">
+                        <button id="rec-delete-selected-btn" class="button hidden" style="background-color: var(--cor-erro);">Remover Selecionados (0)</button>
                         <button id="import-rec-btn" class="button">Importar (CSV/Excel)</button>
                         <input type="file" id="import-rec-input" class="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
                         <button id="open-recuperacao-form-btn" class="button button-success">Adicionar Registo</button>
@@ -618,7 +619,21 @@
                 </div>
                 <div class="table-container">
                     <table id="recuperacao-table" class="main-table">
-                        <thead> <tr> <th data-key="numeroProcesso">Nº Processo</th> <th data-key="assuntoCapa">Assunto Capa</th> <th data-key="interessado">Interessado</th> <th data-key="unidadeTransferiu">Unidade</th> <th data-key="dataAbertura">Data Abertura</th> <th data-key="classificacao">Classificação</th> <th data-key="destinacao">Destinação</th> <th data-key="tags">Tags</th> </tr> </thead>
+                        <thead>
+                            <tr>
+                                <!-- NOVA COLUNA DE CHECKBOX ADICIONADA AQUI -->
+                                <th style="width: 40px; text-align: center;"><input type="checkbox" id="rec-select-all-check"></th>
+                    
+                                <th data-key="numeroProcesso">Nº Processo</th>
+                                <th data-key="assuntoCapa">Assunto Capa</th>
+                                <th data-key="interessado">Interessado</th>
+                                <th data-key="unidadeTransferiu">Unidade</th>
+                                <th data-key="dataAbertura">Data Abertura</th>
+                                <th data-key="classificacao">Classificação</th>
+                                <th data-key="destinacao">Destinação</th>
+                                <th data-key="tags">Tags</th>
+                            </tr>
+                        </thead>
                         <tbody id="rec-table-body"></tbody>
                     </table>
                 </div>
@@ -1267,6 +1282,12 @@
             const filterAtividadeSelect = document.getElementById('filter-atividade');
             const filterSituacaoSelect = document.getElementById('filter-situacao');
             const filterInteressadoInput = document.getElementById('filter-interessado');
+            // ======================================================
+            // ==== NOVAS REFERÊNCIAS (SELEÇÃO MÚLTIPLA) ====
+            // ======================================================
+            const recDeleteSelectedBtn = document.getElementById('rec-delete-selected-btn');
+            const recSelectAllCheck = document.getElementById('rec-select-all-check');
+            // =====================================================
             
             // NOVO: Referências DOM do Interessado (Múltiplo)
             const recInteressadoInput = document.getElementById('rec-interessado-input');
@@ -1478,6 +1499,7 @@
             
             /**
              * Função central que aplica filtros e renderiza a tabela de recuperação.
+             * (VERSÃO ATUALIZADA COM CHECKBOXES)
              */
             function renderRecuperacaoTable() {
                 // 1. Obter todos os valores de filtro
@@ -1492,10 +1514,9 @@
                 const filterAtividade = filterAtividadeSelect.value;
                 const filterSituacao = filterSituacaoSelect.value;
                 const filterInteressado = filterInteressadoInput.value.toLowerCase();
-
-
+            
                 let filteredDocs = [...allRecuperacaoDocs];
-
+            
                 // 2. Aplicar Filtro de Pesquisa Rápida (Termo Geral)
                 if (searchTerm) {
                     filteredDocs = filteredDocs.filter(doc => {
@@ -1507,7 +1528,7 @@
                         });
                     });
                 }
-
+            
                 // 3. Aplicar Filtros Avançados (um por um)
                 if (filterUnidade) {
                     filteredDocs = filteredDocs.filter(doc => doc.unidadeTransferiu === filterUnidade);
@@ -1550,37 +1571,42 @@
                 if (filterDateEnd) {
                     filteredDocs = filteredDocs.filter(doc => doc.dataAbertura && doc.dataAbertura <= filterDateEnd);
                 }
-
+            
                 // 4. Obter total de registos (APÓS filtros, ANTES da paginação)
                 const totalRecords = filteredDocs.length;
                 recTotalRecordsSpan.textContent = totalRecords;
-
+            
                 // 5. Calcular Paginação
                 const totalPages = Math.ceil(totalRecords / recRecordsPerPage) || 1;
                 if (recCurrentPage > totalPages) recCurrentPage = totalPages;
-
+            
                 const startIndex = (recCurrentPage - 1) * recRecordsPerPage;
                 const endIndex = recCurrentPage * recRecordsPerPage;
                 const docsToRender = filteredDocs.slice(startIndex, endIndex);
-
+            
                 // 6. Renderizar Tabela
                 recTableBody.innerHTML = "";
                 if (docsToRender.length === 0) {
-                    recTableBody.innerHTML = '<tr class="no-results-row"><td colspan="8">Nenhum registo encontrado.</td></tr>';
+                    // ATUALIZADO: Colspan agora é 9 por causa do novo checkbox
+                    recTableBody.innerHTML = '<tr class="no-results-row"><td colspan="9">Nenhum registo encontrado.</td></tr>';
                 } else {
                     docsToRender.forEach(doc => {
                         const row = recTableBody.insertRow();
-                        row.addEventListener('click', () => showRecuperacaoModal(doc));
-                        
-                        // Formata o campo interessado
-                        let interessadoHtml = '';
-                        if (Array.isArray(doc.interessado)) {
-                            interessadoHtml = doc.interessado.join(', ');
-                        } else {
-                            interessadoHtml = doc.interessado || '';
-                        }
-
+            
+                        // (NOVO) O clique na linha só abre o modal se NÃO for no checkbox
+                        row.addEventListener('click', (e) => {
+                            if (e.target.type !== 'checkbox') {
+                                showRecuperacaoModal(doc);
+                            }
+                        });
+            
+                        let interessadoHtml = Array.isArray(doc.interessado) ? doc.interessado.join(', ') : (doc.interessado || '');
+            
+                        // (NOVO) O HTML da linha agora inclui a célula do checkbox
                         row.innerHTML = `
+                            <td style="width: 40px; text-align: center;">
+                                <input type="checkbox" class="rec-row-check" data-doc-id="${doc.doc_id}">
+                            </td>
                             <td data-key="numeroProcesso">${doc.numeroProcesso || ''}</td>
                             <td data-key="assuntoCapa">${doc.assuntoCapa || ''}</td>
                             <td data-key="interessado">${interessadoHtml}</td>
@@ -1590,14 +1616,28 @@
                             <td data-key="destinacao">${doc.destinacaoFinal || ''}</td>
                             <td data-key="tags">${doc.tags || ''}</td>
                         `;
+            
+                        // (NOVO) Adiciona o listener no checkbox da linha
+                        row.querySelector('.rec-row-check').addEventListener('click', (e) => {
+                            e.stopPropagation(); // Impede o modal de abrir
+                            updateDeleteButtonVisibility(); // Atualiza o botão
+                            // Desmarca o "Select All" se um item for desmarcado
+                            if (!e.target.checked) {
+                                recSelectAllCheck.checked = false;
+                            }
+                        });
                     });
                 }
-
+            
                 // 7. Atualizar Controlos de Paginação
                 recPageNum.textContent = recCurrentPage;
                 recTotalPages.textContent = totalPages;
                 recPrevBtn.disabled = (recCurrentPage === 1);
                 recNextBtn.disabled = (recCurrentPage === totalPages);
+            
+                // (NOVO) Reseta os controlos de seleção
+                updateDeleteButtonVisibility(); // Atualiza o estado do botão (deve estar escondido)
+                recSelectAllCheck.checked = false; // Reseta o "select all"
             }
 
             /**
@@ -2104,6 +2144,81 @@
                     recuperacaoStatus.className = "status-error";
                 }
             });
+
+            // =================================================================
+            // ==== NOVAS FUNÇÕES E LISTENERS (SELEÇÃO MÚLTIPLA) ====
+            // =================================================================
+            
+            /**
+             * (NOVO) Atualiza a visibilidade e o contador do botão "Remover Selecionados".
+             */
+            function updateDeleteButtonVisibility() {
+                const checkedBoxes = document.querySelectorAll('#rec-table-body .rec-row-check:checked');
+                if (checkedBoxes.length > 0) {
+                    recDeleteSelectedBtn.classList.remove('hidden');
+                    recDeleteSelectedBtn.textContent = `Remover Selecionados (${checkedBoxes.length})`;
+                } else {
+                    recDeleteSelectedBtn.classList.add('hidden');
+                    recDeleteSelectedBtn.textContent = 'Remover Selecionados (0)';
+                }
+            }
+            
+            /**
+             * (NOVO) Listener para o checkbox "Selecionar Todos" no cabeçalho.
+             */
+            recSelectAllCheck.addEventListener('click', () => {
+                const isChecked = recSelectAllCheck.checked;
+                const rowChecks = document.querySelectorAll('#rec-table-body .rec-row-check');
+                rowChecks.forEach(check => {
+                    check.checked = isChecked;
+                });
+                updateDeleteButtonVisibility();
+            });
+            
+            /**
+             * (NOVO) Listener para o botão "Remover Selecionados".
+             */
+            recDeleteSelectedBtn.addEventListener('click', async () => {
+                const checkedBoxes = document.querySelectorAll('#rec-table-body .rec-row-check:checked');
+                if (checkedBoxes.length === 0) return;
+            
+                const docIdsToDelete = [];
+                checkedBoxes.forEach(check => {
+                    docIdsToDelete.push(check.dataset.docId);
+                });
+            
+                // Usa o modal de confirmação existente
+                const confirmed = await showConfirm(
+                    "Confirmar Remoção em Massa",
+                    `Tem a certeza que deseja remover ${docIdsToDelete.length} registo(s)?\n\nEsta ação não pode ser desfeita.`
+                );
+            
+                if (confirmed) {
+                    showToast(`Removendo ${docIdsToDelete.length} registos...`, "success");
+                    try {
+                        // Cria um array de promessas de remoção
+                        const deletePromises = docIdsToDelete.map(id => {
+                            return remove(ref(db, `recuperacao_documentos/${id}`));
+                        });
+            
+                        // Espera todas as promessas terminarem
+                        await Promise.all(deletePromises);
+            
+                        showToast(`${docIdsToDelete.length} registos removidos!`, "success");
+            
+                        await loadAllRecuperacaoDocs(); // Recarregar dados
+                        renderRecuperacaoTable(); // Re-renderizar tabela
+            
+                    } catch (error) {
+                        console.error("Erro ao remover em massa:", error);
+                        showToast(`Erro ao remover registos: ${error.message}`, "error");
+                    }
+                }
+            });
+            
+            // =================================================================
+            // ==== FIM DAS NOVAS FUNÇÕES (SELEÇÃO MÚLTIPLA) ====
+            // =================================================================
 
             const headerMapping = { 'número do processo': 'numeroProcesso', 'numeroprocesso': 'numeroProcesso', 'assunto da capa': 'assuntoCapa', 'assuntocapa': 'assuntoCapa', 'interessado': 'interessado', 'unidade que transferiu o processo': 'unidadeTransferiu', 'unidade que transferiu': 'unidadeTransferiu', 'unidadetransferiu': 'unidadeTransferiu', 'data de transferência (data da ltd)': 'dataTransferencia', 'data de transferência': 'dataTransferencia', 'datatransferencia': 'dataTransferencia', 'data de abertura do processo': 'dataAbertura', 'data de abertura': 'dataAbertura', 'dataabertura': 'dataAbertura', 'ano de fim da vigência': 'anoFimVigencia', 'anofimvigencia': 'anoFimVigencia', 'classificação': 'classificacao', 'classificacao': 'classificacao', 'destinação final': 'destinacaoFinal', 'destinacaofinal': 'destinacaoFinal', 'data da eliminação': 'dataEliminacao', 'dataeliminacao': 'dataEliminacao', 'tags': 'tags' };
             
