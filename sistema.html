@@ -565,12 +565,28 @@
 
     <div id="global-toast" class="hidden"></div>
 
-    <div id="main-app">
+    <div id="login-container">
+        <h1>CODOC</h1>
+        <h2>Sistema de Gestão</h2>
+        <div class="form-group"> <label for="login-email">Email:</label> <input type="email" id="login-email" autocomplete="email"> </div>
+        <div class="form-group"> <label for="login-password">Senha:</label> <input type="password" id="login-password" autocomplete="current-password"> </div>
+        <div class="form-group"> <input type="checkbox" id="login-remember"> <label for="login-remember">Lembrar-me</label> </div>
+        <div id="login-status"></div>
+        <div class="button-group"> <button id="login-btn" class="button button-primary">Login</button> <button id="register-open-btn" class="button">Registar</button> </div>
+    </div>
+
+    <div id="main-app" class="hidden">
         <header id="main-header">
             <h1>CODOC</h1>
             <nav id="tab-navigation">
                 <button class="tab-link active" data-tab="recuperacao-tab">Recuperação de Documentos</button>
             </nav>
+            <div id="user-info-area">
+                <span id="user-info">Utilizador: </span>
+                <button id="messages-btn" class="button"> Mensagens <span id="message-badge" class="hidden">0</span> </button>
+                <button id="admin-btn" class="button button-admin hidden">Admin</button>
+                <button id="logout-btn" class="button">Sair</button>
+            </div>
         </header>
 
         <main id="tab-content">
@@ -700,6 +716,8 @@
             </div>
         </div>
     </div>
+
+    <div id="register-modal" class="modal"> <div class="modal-content"> <span class="modal-close" data-modal-id="register-modal">&times;</span> <h2>Criar Nova Conta</h2> <div class="form-group"> <label for="register-name">Nome Completo:</label> <input type="text" id="register-name"> </div> <div class="form-group"> <label for="register-email">Email:</label> <input type="email" id="register-email"> </div> <div class="form-group"> <label for="register-password">Senha (mínimo 6):</label> <input type="password" id="register-password"> </div> <div class="form-group"> <label for="register-confirm-password">Confirmar Senha:</label> <input type="password" id="register-confirm-password"> </div> <div id="register-status"></div> <div class="button-group"> <button id="register-submit-btn" class="button button-primary">Registar</button> </div> </div> </div>
     
     <div id="recuperacao-form-modal" class="modal"> <div class="modal-content"> <span class="modal-close" data-modal-id="recuperacao-form-modal">&times;</span>
         <h2 id="recuperacao-modal-title">Registo/Recuperação Docs</h2> 
@@ -772,7 +790,48 @@
     <div id="tag-management-modal" class="modal"> <div class="modal-content"> <span class="modal-close" data-modal-id="tag-management-modal">&times;</span> <h2>Gerir Tags (Rec.)</h2> <p>Tags pré-definidas p/ recuperação.</p> <div class="table-container" style="max-height: 400px; margin-bottom: 1rem;"> <table id="tag-management-table" class="main-table"> <thead> <tr> <th data-key="tagName">Nome</th> <th data-key="actions" style="width: 80px;">Ações</th> </tr> </thead> <tbody id="tag-management-table-body"></tbody> </table> </div> <div class="button-group"> <button id="add-new-tag-btn" class="button button-primary">Adicionar</button> </div> </div> </div>
     <div id="tag-edit-modal" class="modal"> <div class="modal-content" style="max-width: 400px;"> <span class="modal-close" data-modal-id="tag-edit-modal">&times;</span> <h2 id="tag-edit-modal-title">Adicionar</h2> <form id="tag-edit-form"> <input type="hidden" id="tag-edit-id"> <div class="form-group"> <label for="tag-edit-name">Nome:</label> <input type="text" id="tag-edit-name" required> </div> </form> <div id="tag-edit-status" class="status-error" style="margin-bottom: 1rem;"></div> <div class="button-group"> <button id="save-tag-btn" class="button button-primary">Salvar</button> </div> </div> </div>
     <div id="user-management-modal" class="modal"> <div class="modal-content modal-content-large"> <span class="modal-close" data-modal-id="user-management-modal">&times;</span> <h2>Gerir Utilizadores</h2> <div class="table-container" style="max-height: 400px; margin-bottom: 1rem;"> <table id="user-management-table" class="main-table"> <thead> <tr> <th data-key="name">Nome</th> <th data-key="email">Email</th> <th data-key="status">Status</th> <th data-key="role">Função</th> <th data-key="actions">Ações</th> </tr> </thead> <tbody id="user-management-table-body"></tbody> </table> </div> <div class="button-group"> <button id="refresh-users-btn" class="button">Atualizar</button> </div> </div> </div>
+    </div>
+    </div>
     
+    <div id="batch-classify-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" data-modal-id="batch-classify-modal">&times;</span>
+            <h2>Classificar em Lote</h2>
+            <p>A classificação e destinação abaixo serão APLICADAS a todos os <strong id="batch-classify-count">0</strong> registos selecionados. As tags serão ADICIONADAS às existentes.</p>
+            
+            <form id="batch-classify-form" class="modal-form">
+                <div class="form-group form-group-full">
+                    <label for="batch-rec-tipo-atividade">Atividade:</label>
+                    <select id="batch-rec-tipo-atividade">
+                        <option value="">Selecione...</option>
+                        <option value="fim">Atividade-Fim</option>
+                        <option value="meio">Atividade-Meio</option>
+                    </select>
+                </div>
+                <div class="form-group form-group-full">
+                    <label for="batch-rec-classificacao">Classificação (Obrigatório):</label>
+                    <select id="batch-rec-classificacao" required>
+                        <option value="">Selecione a Atividade</option>
+                    </select>
+                </div>
+                <div class="form-group form-group-full">
+                    <label for="batch-rec-destinacao-final">Destinação Final (Automática):</label>
+                    <input type="text" id="batch-rec-destinacao-final" readonly>
+                </div>
+                <div class="form-group form-group-full">
+                    <label for="batch-rec-tags-to-add">Tags (para ADICIONAR, separadas por vírgula):</label>
+                    <input type="text" id="batch-rec-tags-to-add" placeholder="Ex: urgente, revisto">
+                </div>
+            </form>
+            
+            <div id="batch-classify-status" class="status-error" style="margin-bottom: 1rem;"></div>
+            
+            <div class="button-group">
+                <button id="batch-classify-save-btn" class="button button-primary">Aplicar a Lote</button>
+            </div>
+        </div>
+    </div>
+    <script type="module">
     <script type="module">
         // Imports do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -1220,6 +1279,21 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
+            // ... código existente ...
+            const recDeleteSelectedBtn = document.getElementById('rec-delete-selected-btn');
+            const recSelectAllCheck = document.getElementById('rec-select-all-check');
+
+            const recClassifySelectedBtn = document.getElementById('rec-classify-selected-btn');
+            const batchClassifyModal = document.getElementById('batch-classify-modal');
+            const batchClassifyCount = document.getElementById('batch-classify-count');
+            const batchClassifyForm = document.getElementById('batch-classify-form');
+            const batchRecTipoAtividadeSelect = document.getElementById('batch-rec-tipo-atividade');
+            const batchRecClassificacaoSelect = document.getElementById('batch-rec-classificacao');
+            const batchRecDestinacaoInput = document.getElementById('batch-rec-destinacao-final');
+            const batchRecTagsInput = document.getElementById('batch-rec-tags-to-add');
+            const batchClassifyStatus = document.getElementById('batch-classify-status');
+            const batchClassifySaveBtn = document.getElementById('batch-classify-save-btn');
+            // ... código existente ...
 
             // --- Estado Global ---
             // REMOVIDO: allRecords, processSteps, colorRules, currentEditingSteps, selectedStepIndex
@@ -1430,16 +1504,23 @@
                 } 
             }
 
-            // COLE ESTE NO LUGAR:
-            async function initializeApp() {
-                // (Note que setupMessageListener() e referências ao userProfile foram removidas)
-                await loadManagedTags();
-                await loadAllRecuperacaoDocs();
-                renderRecuperacaoTable();
+            // --- LÓGICA DA APLICAÇÃO (Visibilidade e Abas) ---
+            async function showAppView() { 
+                loginContainer.classList.add('hidden'); 
+                mainAppContainer.classList.remove('hidden'); 
+                userInfo.textContent = `Utilizador: ${userProfile.name}`; 
+                if (userProfile.role === 'admin') adminBtn.classList.remove('hidden'); 
+                else adminBtn.classList.add('hidden'); 
+                setupMessageListener(); 
+                // REMOVIDO: loadHelperData()
+                await loadManagedTags(); 
+                // REMOVIDO: loadAllGestaoRecords()
+                await loadAllRecuperacaoDocs(); 
+                renderRecuperacaoTable(); 
+                // REMOVIDO: checkEliminacaoStartup()
             }
             
-            // Inicia a app diretamente assim que o DOM carregar
-            initializeApp();
+            function showLoginView() { loginContainer.classList.remove('hidden'); mainAppContainer.classList.add('hidden'); loadSavedLoginInfo(); }
             
             // Evento de clique nas abas (mantido, mas só tem 1 botão, então não fará mal)
             tabNavigation.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { const tabId = e.target.dataset.tab; tabNavigation.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active')); tabContent.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active')); e.target.classList.add('active'); document.getElementById(tabId).classList.add('active'); } });
@@ -2070,6 +2151,8 @@
                         recuperacaoStatus.textContent = "Registo Atualizado!";
                         recuperacaoStatus.className = "status-success";
                     } else {
+                        docData.registadoPor = userProfile.name;
+                        docData.registadoEm = new Date().toISOString();
                         const docListRef = ref(db, 'recuperacao_documentos');
                         await push(docListRef, docData);
                         recuperacaoStatus.textContent = "Registado!";
@@ -2125,16 +2208,26 @@
             /**
              * (NOVO) Atualiza a visibilidade e o contador do botão "Remover Selecionados".
              */
-            function updateDeleteButtonVisibility() {
-                const checkedBoxes = document.querySelectorAll('#rec-table-body .rec-row-check:checked');
-                if (checkedBoxes.length > 0) {
-                    recDeleteSelectedBtn.classList.remove('hidden');
-                    recDeleteSelectedBtn.textContent = `Remover Selecionados (${checkedBoxes.length})`;
-                } else {
-                    recDeleteSelectedBtn.classList.add('hidden');
-                    recDeleteSelectedBtn.textContent = 'Remover Selecionados (0)';
-                }
-            }
+            function updateSelectionButtonsVisibility() {
+                            const checkedBoxes = document.querySelectorAll('#rec-table-body .rec-row-check:checked');
+                            const count = checkedBoxes.length;
+            
+                            if (count > 0) {
+                                // Botão de Remover
+                                recDeleteSelectedBtn.classList.remove('hidden');
+                                recDeleteSelectedBtn.textContent = `Remover Selecionados (${count})`;
+                                // Botão de Classificar
+                                recClassifySelectedBtn.classList.remove('hidden');
+                                recClassifySelectedBtn.textContent = `Classificar em Lote (${count})`;
+                            } else {
+                                // Botão de Remover
+                                recDeleteSelectedBtn.classList.add('hidden');
+                                recDeleteSelectedBtn.textContent = 'Remover Selecionados (0)';
+                                // Botão de Classificar
+                                recClassifySelectedBtn.classList.add('hidden');
+                                recClassifySelectedBtn.textContent = 'Classificar em Lote (0)';
+                            }
+                        }
             
             /**
              * (NOVO) Listener para o checkbox "Selecionar Todos" no cabeçalho.
@@ -2192,7 +2285,151 @@
             // =================================================================
             // ==== FIM DAS NOVAS FUNÇÕES (SELEÇÃO MÚLTIPLA) ====
             // =================================================================
+            // =================================================================
+            // ==== NOVAS FUNÇÕES (CLASSIFICAÇÃO EM LOTE) ====
+            // =================================================================
 
+            /**
+             * (NOVO) Abre o modal de classificação em lote
+             */
+            recClassifySelectedBtn.addEventListener('click', () => {
+                const checkedBoxes = document.querySelectorAll('#rec-table-body .rec-row-check:checked');
+                if (checkedBoxes.length === 0) return;
+
+                batchClassifyForm.reset();
+                batchClassifyStatus.textContent = "";
+                batchRecDestinacaoInput.value = "";
+                batchRecDestinacaoInput.disabled = true;
+                batchClassifyCount.textContent = checkedBoxes.length;
+                
+                // Popula os dropdowns
+                updateBatchClassificacaoOptions(null);
+                
+                batchClassifyModal.style.display = 'flex';
+            });
+
+            /**
+             * (NOVO) Popula o dropdown de classificação do modal BATCH
+             */
+            function updateBatchClassificacaoOptions(valorSalvo = null) {
+                const tipo = batchRecTipoAtividadeSelect.value;
+                batchRecClassificacaoSelect.innerHTML = ""; // Limpa opções
+
+                let listaCodigos = {};
+                if (tipo === 'fim') {
+                    listaCodigos = classificacaoCodigos.fim;
+                } else if (tipo === 'meio') {
+                    listaCodigos = classificacaoCodigos.meio;
+                }
+
+                batchRecClassificacaoSelect.appendChild(new Option("Selecione a Classificação...", ""));
+
+                // Popula com os códigos corretos
+                for (const [codigo, details] of Object.entries(listaCodigos)) {
+                    const opt = new Option(details.desc, codigo);
+                    if (valorSalvo && codigo === valorSalvo) {
+                        opt.selected = true; 
+                    }
+                    batchRecClassificacaoSelect.appendChild(opt);
+                }
+            }
+
+            // (NOVO) Listener para o Tipo de Atividade (Batch)
+            batchRecTipoAtividadeSelect.addEventListener('change', () => {
+                updateBatchClassificacaoOptions(null);
+                batchRecDestinacaoInput.value = ""; // Limpa destinação
+                batchRecDestinacaoInput.disabled = true;
+            });
+
+            // (NOVO) Listener para a Classificação (Batch) - Define a destinação
+            batchRecClassificacaoSelect.addEventListener('change', () => {
+                const tipo = batchRecTipoAtividadeSelect.value;
+                const codigo = batchRecClassificacaoSelect.value;
+
+                if (tipo && codigo && classificacaoCodigos[tipo] && classificacaoCodigos[tipo][codigo]) {
+                    const details = classificacaoCodigos[tipo][codigo];
+                    batchRecDestinacaoInput.value = details.destinacao;
+                    batchRecDestinacaoInput.disabled = true;
+                } else {
+                    batchRecDestinacaoInput.value = "";
+                    batchRecDestinacaoInput.disabled = true;
+                }
+            });
+
+            /**
+             * (NOVO) Salva as alterações de classificação em lote
+             */
+            batchClassifySaveBtn.addEventListener('click', async () => {
+                const newClassificacao = batchRecClassificacaoSelect.value;
+                const newDestinacao = batchRecDestinacaoInput.value;
+                const tagsToAddStr = batchRecTagsInput.value;
+
+                // Validação
+                if (!newClassificacao) {
+                    batchClassifyStatus.textContent = "Por favor, selecione uma classificação válida.";
+                    return;
+                }
+
+                const checkedBoxes = document.querySelectorAll('#rec-table-body .rec-row-check:checked');
+                if (checkedBoxes.length === 0) {
+                    batchClassifyStatus.textContent = "Nenhum item selecionado.";
+                    return;
+                }
+
+                const docIdsToUpdate = Array.from(checkedBoxes).map(cb => cb.dataset.docId);
+
+                if (!await showConfirm("Classificar em Lote", `Tem a certeza que deseja aplicar a classificação:\n${newClassificacao}\n\nA ${docIdsToUpdate.length} registo(s)?\nIsto irá sobrescrever a classificação e destinação existentes.`)) {
+                    return;
+                }
+
+                batchClassifyStatus.textContent = "Processando lote...";
+                batchClassifyStatus.className = "status-loading";
+
+                try {
+                    const updates = {};
+                    const newTagsList = tagsToAddStr.split(',').map(t => t.trim()).filter(Boolean);
+
+                    for (const docId of docIdsToUpdate) {
+                        // Path para os campos a atualizar
+                        const classPath = `recuperacao_documentos/${docId}/classificacao`;
+                        const destPath = `recuperacao_documentos/${docId}/destinacaoFinal`;
+                        const tagsPath = `recuperacao_documentos/${docId}/tags`;
+
+                        // Define a nova classificação e destinação
+                        updates[classPath] = newClassificacao;
+                        updates[destPath] = newDestinacao;
+
+                        // Lógica para ADICIONAR tags (sem duplicar)
+                        if (newTagsList.length > 0) {
+                            const doc = allRecuperacaoDocs.find(d => d.doc_id === docId);
+                            const existingTagsList = (doc.tags || "").split(',').map(t => t.trim()).filter(Boolean);
+                            
+                            // Junta as listas e remove duplicados
+                            const combinedTags = [...new Set([...existingTagsList, ...newTagsList])];
+                            updates[tagsPath] = combinedTags.join(', ');
+                        }
+                    }
+
+                    // Envia uma única atualização em lote para o Firebase
+                    await update(ref(db), updates);
+
+                    showToast(`Sucesso! ${docIdsToUpdate.length} registos atualizados.`, "success");
+                    closeModal('batch-classify-modal');
+
+                    // Recarrega os dados e renderiza a tabela
+                    await loadAllRecuperacaoDocs();
+                    renderRecuperacaoTable(); // Isto irá desmarcar tudo e esconder os botões
+
+                } catch (error) {
+                    console.error("Erro ao classificar em lote:", error);
+                    batchClassifyStatus.textContent = `Erro: ${error.message}`;
+                    batchClassifyStatus.className = "status-error";
+                }
+            });
+
+            // =================================================================
+            // ==== FIM DAS NOVAS FUNÇÕES (CLASSIFICAÇÃO EM LOTE) ====
+            // =================================================================
             const headerMapping = { 'número do processo': 'numeroProcesso', 'numeroprocesso': 'numeroProcesso', 'assunto da capa': 'assuntoCapa', 'assuntocapa': 'assuntoCapa', 'interessado': 'interessado', 'unidade que transferiu o processo': 'unidadeTransferiu', 'unidade que transferiu': 'unidadeTransferiu', 'unidadetransferiu': 'unidadeTransferiu', 'data de transferência (data da ltd)': 'dataTransferencia', 'data de transferência': 'dataTransferencia', 'datatransferencia': 'dataTransferencia', 'data de abertura do processo': 'dataAbertura', 'data de abertura': 'dataAbertura', 'dataabertura': 'dataAbertura', 'ano de fim da vigência': 'anoFimVigencia', 'anofimvigencia': 'anoFimVigencia', 'classificação': 'classificacao', 'classificacao': 'classificacao', 'destinação final': 'destinacaoFinal', 'destinacaofinal': 'destinacaoFinal', 'data da eliminação': 'dataEliminacao', 'dataeliminacao': 'dataEliminacao', 'tags': 'tags' };
             
             importRecBtn.addEventListener('click', () => {
@@ -2200,7 +2437,7 @@
             }); 
             
             importRecInput.addEventListener('change', handleImportFile);
-            async function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; recTableBody.innerHTML = '<tr class="no-results-row"><td colspan="8">Processando...</td></tr>'; const reader = new FileReader(); reader.onload = async (e) => { try { const data = e.target.result; const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: false, cellText: false }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' }); if (!jsonData || jsonData.length === 0) throw new Error("Planilha vazia."); const processedRows = []; for (const row of jsonData) { onst docData = { registadoPor: "Importação", registadoEm: new Date().toISOString() }; let hasNumeroProcesso = false; for (const [key, value] of Object.entries(row)) { const normalizedKey = key.toLowerCase().trim(); if (headerMapping[normalizedKey]) { const firebaseKey = headerMapping[normalizedKey]; if (value instanceof Date) { docData[firebaseKey] = value.toISOString().split('T')[0]; } else if (['dataTransferencia', 'dataAbertura', 'dataEliminacao'].includes(firebaseKey) && typeof value === 'string' && value.includes('/')) { const parts = value.split('/'); if (parts.length === 3) docData[firebaseKey] = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`; else docData[firebaseKey] = value; } else if (firebaseKey === 'interessado' && typeof value === 'string') { // NOVO: Converte interessado em array
+            async function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; recTableBody.innerHTML = '<tr class="no-results-row"><td colspan="8">Processando...</td></tr>'; const reader = new FileReader(); reader.onload = async (e) => { try { const data = e.target.result; const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: false, cellText: false }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' }); if (!jsonData || jsonData.length === 0) throw new Error("Planilha vazia."); const processedRows = []; for (const row of jsonData) { const docData = { registadoPor: userProfile.name, registadoEm: new Date().toISOString() }; let hasNumeroProcesso = false; for (const [key, value] of Object.entries(row)) { const normalizedKey = key.toLowerCase().trim(); if (headerMapping[normalizedKey]) { const firebaseKey = headerMapping[normalizedKey]; if (value instanceof Date) { docData[firebaseKey] = value.toISOString().split('T')[0]; } else if (['dataTransferencia', 'dataAbertura', 'dataEliminacao'].includes(firebaseKey) && typeof value === 'string' && value.includes('/')) { const parts = value.split('/'); if (parts.length === 3) docData[firebaseKey] = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`; else docData[firebaseKey] = value; } else if (firebaseKey === 'interessado' && typeof value === 'string') { // NOVO: Converte interessado em array
                                 docData[firebaseKey] = value.split(/[,;]/).map(s => s.trim()).filter(Boolean);
                             } else { docData[firebaseKey] = value; } if (firebaseKey === 'numeroProcesso' && value) hasNumeroProcesso = true; } } if (hasNumeroProcesso) processedRows.push(docData); } if (processedRows.length === 0) throw new Error("Nenhum registo válido encontrado."); recTableBody.innerHTML = `<tr class="no-results-row"><td colspan="8">Importando ${processedRows.length}...</td></tr>`; const docListRef = ref(db, 'recuperacao_documentos'); const uploadPromises = processedRows.map(docData => push(docListRef, docData)); await Promise.all(uploadPromises); 
                 showToast(`Sucesso! ${processedRows.length} importados.`, "success"); 
