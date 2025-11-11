@@ -565,28 +565,12 @@
 
     <div id="global-toast" class="hidden"></div>
 
-    <div id="login-container">
-        <h1>CODOC</h1>
-        <h2>Sistema de Gestão</h2>
-        <div class="form-group"> <label for="login-email">Email:</label> <input type="email" id="login-email" autocomplete="email"> </div>
-        <div class="form-group"> <label for="login-password">Senha:</label> <input type="password" id="login-password" autocomplete="current-password"> </div>
-        <div class="form-group"> <input type="checkbox" id="login-remember"> <label for="login-remember">Lembrar-me</label> </div>
-        <div id="login-status"></div>
-        <div class="button-group"> <button id="login-btn" class="button button-primary">Login</button> <button id="register-open-btn" class="button">Registar</button> </div>
-    </div>
-
-    <div id="main-app" class="hidden">
+    <div id="main-app">
         <header id="main-header">
             <h1>CODOC</h1>
             <nav id="tab-navigation">
                 <button class="tab-link active" data-tab="recuperacao-tab">Recuperação de Documentos</button>
             </nav>
-            <div id="user-info-area">
-                <span id="user-info">Utilizador: </span>
-                <button id="messages-btn" class="button"> Mensagens <span id="message-badge" class="hidden">0</span> </button>
-                <button id="admin-btn" class="button button-admin hidden">Admin</button>
-                <button id="logout-btn" class="button">Sair</button>
-            </div>
         </header>
 
         <main id="tab-content">
@@ -716,8 +700,6 @@
             </div>
         </div>
     </div>
-
-    <div id="register-modal" class="modal"> <div class="modal-content"> <span class="modal-close" data-modal-id="register-modal">&times;</span> <h2>Criar Nova Conta</h2> <div class="form-group"> <label for="register-name">Nome Completo:</label> <input type="text" id="register-name"> </div> <div class="form-group"> <label for="register-email">Email:</label> <input type="email" id="register-email"> </div> <div class="form-group"> <label for="register-password">Senha (mínimo 6):</label> <input type="password" id="register-password"> </div> <div class="form-group"> <label for="register-confirm-password">Confirmar Senha:</label> <input type="password" id="register-confirm-password"> </div> <div id="register-status"></div> <div class="button-group"> <button id="register-submit-btn" class="button button-primary">Registar</button> </div> </div> </div>
     
     <div id="recuperacao-form-modal" class="modal"> <div class="modal-content"> <span class="modal-close" data-modal-id="recuperacao-form-modal">&times;</span>
         <h2 id="recuperacao-modal-title">Registo/Recuperação Docs</h2> 
@@ -1448,23 +1430,16 @@
                 } 
             }
 
-            // --- LÓGICA DA APLICAÇÃO (Visibilidade e Abas) ---
-            async function showAppView() { 
-                loginContainer.classList.add('hidden'); 
-                mainAppContainer.classList.remove('hidden'); 
-                userInfo.textContent = `Utilizador: ${userProfile.name}`; 
-                if (userProfile.role === 'admin') adminBtn.classList.remove('hidden'); 
-                else adminBtn.classList.add('hidden'); 
-                setupMessageListener(); 
-                // REMOVIDO: loadHelperData()
-                await loadManagedTags(); 
-                // REMOVIDO: loadAllGestaoRecords()
-                await loadAllRecuperacaoDocs(); 
-                renderRecuperacaoTable(); 
-                // REMOVIDO: checkEliminacaoStartup()
+            // COLE ESTE NO LUGAR:
+            async function initializeApp() {
+                // (Note que setupMessageListener() e referências ao userProfile foram removidas)
+                await loadManagedTags();
+                await loadAllRecuperacaoDocs();
+                renderRecuperacaoTable();
             }
             
-            function showLoginView() { loginContainer.classList.remove('hidden'); mainAppContainer.classList.add('hidden'); loadSavedLoginInfo(); }
+            // Inicia a app diretamente assim que o DOM carregar
+            initializeApp();
             
             // Evento de clique nas abas (mantido, mas só tem 1 botão, então não fará mal)
             tabNavigation.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { const tabId = e.target.dataset.tab; tabNavigation.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active')); tabContent.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active')); e.target.classList.add('active'); document.getElementById(tabId).classList.add('active'); } });
@@ -2095,8 +2070,6 @@
                         recuperacaoStatus.textContent = "Registo Atualizado!";
                         recuperacaoStatus.className = "status-success";
                     } else {
-                        docData.registadoPor = userProfile.name;
-                        docData.registadoEm = new Date().toISOString();
                         const docListRef = ref(db, 'recuperacao_documentos');
                         await push(docListRef, docData);
                         recuperacaoStatus.textContent = "Registado!";
@@ -2227,7 +2200,7 @@
             }); 
             
             importRecInput.addEventListener('change', handleImportFile);
-            async function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; recTableBody.innerHTML = '<tr class="no-results-row"><td colspan="8">Processando...</td></tr>'; const reader = new FileReader(); reader.onload = async (e) => { try { const data = e.target.result; const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: false, cellText: false }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' }); if (!jsonData || jsonData.length === 0) throw new Error("Planilha vazia."); const processedRows = []; for (const row of jsonData) { const docData = { registadoPor: userProfile.name, registadoEm: new Date().toISOString() }; let hasNumeroProcesso = false; for (const [key, value] of Object.entries(row)) { const normalizedKey = key.toLowerCase().trim(); if (headerMapping[normalizedKey]) { const firebaseKey = headerMapping[normalizedKey]; if (value instanceof Date) { docData[firebaseKey] = value.toISOString().split('T')[0]; } else if (['dataTransferencia', 'dataAbertura', 'dataEliminacao'].includes(firebaseKey) && typeof value === 'string' && value.includes('/')) { const parts = value.split('/'); if (parts.length === 3) docData[firebaseKey] = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`; else docData[firebaseKey] = value; } else if (firebaseKey === 'interessado' && typeof value === 'string') { // NOVO: Converte interessado em array
+            async function handleImportFile(event) { const file = event.target.files[0]; if (!file) return; recTableBody.innerHTML = '<tr class="no-results-row"><td colspan="8">Processando...</td></tr>'; const reader = new FileReader(); reader.onload = async (e) => { try { const data = e.target.result; const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: false, cellText: false }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' }); if (!jsonData || jsonData.length === 0) throw new Error("Planilha vazia."); const processedRows = []; for (const row of jsonData) { onst docData = { registadoPor: "Importação", registadoEm: new Date().toISOString() }; let hasNumeroProcesso = false; for (const [key, value] of Object.entries(row)) { const normalizedKey = key.toLowerCase().trim(); if (headerMapping[normalizedKey]) { const firebaseKey = headerMapping[normalizedKey]; if (value instanceof Date) { docData[firebaseKey] = value.toISOString().split('T')[0]; } else if (['dataTransferencia', 'dataAbertura', 'dataEliminacao'].includes(firebaseKey) && typeof value === 'string' && value.includes('/')) { const parts = value.split('/'); if (parts.length === 3) docData[firebaseKey] = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`; else docData[firebaseKey] = value; } else if (firebaseKey === 'interessado' && typeof value === 'string') { // NOVO: Converte interessado em array
                                 docData[firebaseKey] = value.split(/[,;]/).map(s => s.trim()).filter(Boolean);
                             } else { docData[firebaseKey] = value; } if (firebaseKey === 'numeroProcesso' && value) hasNumeroProcesso = true; } } if (hasNumeroProcesso) processedRows.push(docData); } if (processedRows.length === 0) throw new Error("Nenhum registo válido encontrado."); recTableBody.innerHTML = `<tr class="no-results-row"><td colspan="8">Importando ${processedRows.length}...</td></tr>`; const docListRef = ref(db, 'recuperacao_documentos'); const uploadPromises = processedRows.map(docData => push(docListRef, docData)); await Promise.all(uploadPromises); 
                 showToast(`Sucesso! ${processedRows.length} importados.`, "success"); 
